@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - All Bookings</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">QuickFix - Admin</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" href="/admin/dashboard">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/service/add">Add Services</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/bookings">Customers Orders</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/edit">Edit Services</a></li>
+         <li class="nav-item"><a class="nav-link active" href="/admin/inactive">Deactivated Services</a></li>
+        <li class="nav-item">
+          <a class="btn btn-light text-success ms-2" href="/admin/logout">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Bookings Section -->
+<div class="container py-5">
+  <div class="card shadow border-0">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-journal-check me-2"></i>All Service Bookings</h4>
+    </div>
+    <div class="card-body">
+      <div id="bookings" class="table-responsive">
+        <div class="text-muted text-center py-4">Loading bookings...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Booking JS Logic -->
+<script>
+fetch("/admin/bookings/all")
+  .then(response => response.json())
+  .then(data => {
+    const bookingsContainer = document.getElementById("bookings");
+
+    if (data.length === 0) {
+      bookingsContainer.innerHTML = `
+        <div class="alert alert-info text-center">No bookings found.</div>`;
+      return;
+    }
+
+    let output = `
+      <table class="table table-hover table-bordered table-striped align-middle">
+        <thead class="table-primary text-center">
+          <tr>
+            <th>Booking ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Service</th>
+            <th>Date</th>
+            <th>Price (₹)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+ data.forEach(booking => {
+  output += `
+    <tr>
+      <td class="text-center">${booking.id}</td>
+      <td>${booking.customer.username}</td>
+      <td>${booking.customer.email}</td>
+      <td>${booking.customer.address}</td>
+      <td>${booking.serviceDetail.serviceName}</td>
+      <td class="text-nowrap">${booking.bookingDate}</td>
+      <td class="text-end">₹${booking.serviceDetail.price}</td>
+      <td class="text-center">${booking.status}</td>
+      <td class="text-center">
+        ${
+          (booking.status.toLowerCase() === "pending" || booking.status.trim() === "")
+            ? `<button class="btn btn-success btn-sm" onclick="acceptBooking(${booking.id})">Accept</button>`
+            : `<span class="badge bg-success">Accepted</span>`
+        }
+      </td>
+    </tr>
+  `;
+
+});
+    output += `</tbody></table>`;
+    bookingsContainer.innerHTML = output;
+  })
+  .catch(error => {
+    console.error("Error fetching bookings:", error);
+    document.getElementById("bookings").innerHTML = `
+      <div class="alert alert-danger text-center">Failed to load bookings.</div>`;
+  });
+
+function acceptBooking(bookingId) {
+  if (confirm("Accept this booking?")) {
+    fetch(`/admin/bookings/accept/${bookingId}`, {
+      method: 'PUT'
+    })
+    .then(response => response.text())
+    .then(msg => {
+      alert(msg);
+      location.reload();
+    })
+    .catch(error => {
+      console.error("Error accepting booking:", error);
+      alert("Failed to accept booking.");
+    });
+  }
+}
+</script>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
